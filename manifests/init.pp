@@ -78,7 +78,6 @@ class ssh (
   $sshd_hostbasedauthentication        = 'no',
   $sshd_ignoreuserknownhosts           = 'no',
   $sshd_ignorerhosts                   = 'yes',
-  $manage_service                      = true,
   $service_ensure                      = 'running',
   $service_name                        = 'USE_DEFAULTS',
   $service_enable                      = true,
@@ -140,7 +139,7 @@ class ssh (
       $default_sshd_config_hostkey             = [ '/etc/ssh/ssh_host_rsa_key' ]
       case $::architecture {
         'x86_64': {
-          if ($::operatingsystem =~ /(SLES|SLED)/) and ($::operatingsystemrelease =~ /^12\./) {
+          if ($::operatingsystem == 'SLES') and ($::operatingsystemrelease =~ /^12\./) {
             $default_sshd_config_subsystem_sftp = '/usr/lib/ssh/sftp-server'
           } else {
             $default_sshd_config_subsystem_sftp = '/usr/lib64/ssh/sftp-server'
@@ -581,13 +580,6 @@ class ssh (
   }
   validate_bool($purge_keys_real)
 
-  if type3x($manage_service) == 'string' {
-    $manage_service_real = str2bool($manage_service)
-  } else {
-    $manage_service_real = $manage_service
-  }
-  validate_bool($manage_service_real)
-
   if type3x($service_enable) == 'string' {
     $service_enable_real = str2bool($service_enable)
   } else {
@@ -711,15 +703,13 @@ class ssh (
     }
   }
 
-  if $manage_service_real {
-    service { 'sshd_service' :
-      ensure     => $service_ensure,
-      name       => $service_name_real,
-      enable     => $service_enable_real,
-      hasrestart => $service_hasrestart_real,
-      hasstatus  => $service_hasstatus_real,
-      subscribe  => File['sshd_config'],
-    }
+  service { 'sshd_service' :
+    ensure     => $service_ensure,
+    name       => $service_name_real,
+    enable     => $service_enable_real,
+    hasrestart => $service_hasrestart_real,
+    hasstatus  => $service_hasstatus_real,
+    subscribe  => File['sshd_config'],
   }
 
   if $manage_firewall == true {
